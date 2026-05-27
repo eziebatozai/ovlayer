@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { CONFIG, CONTRACTS } from "../config";
-import { VAULT_ABI } from "../abi/overlayer";
+import { OVERLAYER_WRAP_ABI } from "../abi/overlayer";
 import { ERC20_ABI } from "../abi/erc20";
 import {
   getWallet,
@@ -13,17 +13,18 @@ import {
 
 /**
  * Mint T+ or C+ tokens on Overlayer
- * 
- * Based on actual TX: 0x602c00f3f3010342d411886ff53a907b82b903fd2b5455bac266a1987067a220
- * Function: mint(tuple order_)
- * MethodID: 0x2ef6f1ab
- * 
+ *
+ * Source: contracts/overlayer/OverlayerWrap.sol → mint(Order calldata order_)
+ * Source: contracts/overlayer/types/OverlayerWrapCoreTypes.sol
+ *
  * Order struct:
- *   - depositor: address (who deposits the underlying)
- *   - receiver: address (who receives the minted token)
- *   - asset: address (underlying stablecoin address)
- *   - assetAmount: uint256 (amount of underlying to deposit)
- *   - mintAmount: uint256 (amount of overlaid token to mint)
+ *   - benefactor: address (who provides collateral — must be msg.sender)
+ *   - beneficiary: address (who receives minted tokens)
+ *   - collateral: address (underlying stablecoin: USDC or USDT)
+ *   - collateralAmount: uint256 (amount in collateral decimals, e.g. 6 for USDC)
+ *   - overlayerWrapAmount: uint256 (amount in 18 decimals)
+ *
+ * Flow: approve collateral → call mint(order) on T+/C+ contract
  */
 export async function mintTokens(
   chain: "eth_sepolia" | "base_sepolia",
@@ -41,14 +42,14 @@ export async function mintTokens(
 
   log("MINT", `Starting mint of ${amount} ${tokenName} on ${chain} (${txCount} tx)`);
 
-  // Token contract (T+ or C+) - this has the mint function
-  const vaultContract = new ethers.Contract(
+  // OverlayerWrap contract (T+ or C+) — has the mint function
+  const wrapContract = new ethers.Contract(
     tokenContracts.TOKEN,
-    VAULT_ABI,
+    OVERLAYER_WRAP_ABI,
     wallet
   );
 
-  // Underlying stablecoin contract
+  // Underlying stablecoin contract (USDC/USDT)
   const underlyingContract = new ethers.Contract(
     tokenContracts.UNDERLYING,
     ERC20_ABI,
@@ -57,28 +58,28 @@ export async function mintTokens(
 
   // Get decimals
   const underlyingDecimals = await underlyingContract.decimals();
-  const tokenDecimals = await vaultContract.decimals();
+  const wrapDecimals = await wrapContract.decimals();
+  log("MINT", `Underlying: ${underlyingDecimals} decimals, ${tokenName}: ${wrapDecimals} decimals`);
 
   let successCount = 0;
   const amountPerTx = Math.ceil(amount / txCount);
 
   for (let i = 0; i < txCount; i++) {
     try {
-      const mintAmount = i === txCount - 1 
-        ? amount - amountPerTx * (txCount - 1) 
+      const mintAmount = i === txCount - 1
+        ? amount - amountPerTx * (txCount - 1)
         : amountPerTx;
       if (mintAmount <= 0) break;
 
-      // Parse amounts based on decimals
-      // Underlying (USDC/USDT) typically 6 decimals, overlaid token (T+/C+) 18 decimals
-      const assetAmount = parseAmount(mintAmount, underlyingDecimals);
-      const mintTokenAmount = parseAmount(mintAmount, tokenDecimals);
-      
-      log("MINT", `Asset amount: ${assetAmount} (${underlyingDecimals} dec), Mint amount: ${mintTokenAmount} (${tokenDecimals} dec)`);
+      // Parse amounts:
+      // collateralAmount in underlying decimals (e.g., 6 for USDC)
+      // overlayerWrapAmount in wrap decimals (18)
+      const collateralAmount = parseAmount(mintAmount, underlyingDecimals);
+      const overlayerWrapAmount = parseAmount(mintAmount, wrapDecimals);
 
       // Check underlying balance
       const balance = await underlyingContract.balanceOf(address);
-      if (balance < assetAmount) {
+      if (balance < collateralAmount) {
         log(
           "MINT",
           `Insufficient ${tokenType} balance: ${formatAmount(balance, underlyingDecimals)} < ${mintAmount}`
@@ -86,12 +87,12 @@ export async function mintTokens(
         break;
       }
 
-      // Approve underlying to T+/C+ contract if needed
+      // Approve underlying to OverlayerWrap contract if needed
       const currentAllowance = await underlyingContract.allowance(
         address,
         tokenContracts.TOKEN
       );
-      if (currentAllowance < assetAmount) {
+      if (currentAllowance < collateralAmount) {
         const approveTx = await underlyingContract.approve(
           tokenContracts.TOKEN,
           ethers.MaxUint256
@@ -101,17 +102,17 @@ export async function mintTokens(
         await sleep(2000);
       }
 
-      // Build the order tuple
+      // Build Order struct
       const order = {
-        depositor: address,
-        receiver: address,
-        asset: tokenContracts.UNDERLYING,
-        assetAmount: assetAmount,
-        mintAmount: mintTokenAmount,
+        benefactor: address,          // msg.sender (who provides collateral)
+        beneficiary: address,         // who receives minted T+/C+
+        collateral: tokenContracts.UNDERLYING, // underlying stablecoin address
+        collateralAmount: collateralAmount,    // amount in underlying decimals
+        overlayerWrapAmount: overlayerWrapAmount, // amount in 18 decimals
       };
 
       // Call mint(order_)
-      const tx = await vaultContract.mint(order);
+      const tx = await wrapContract.mint(order);
       const receipt = await tx.wait();
       log(
         "MINT",

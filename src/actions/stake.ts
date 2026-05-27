@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { CONFIG, CONTRACTS } from "../config";
-import { STAKING_ABI } from "../abi/overlayer";
+import { STAKED_OVERLAYER_WRAP_ABI } from "../abi/overlayer";
 import { ERC20_ABI } from "../abi/erc20";
 import {
   getWallet,
@@ -34,7 +34,7 @@ export async function stakeTokens(
 
   const stakingContract = new ethers.Contract(
     tokenContracts.STAKING,
-    STAKING_ABI,
+    STAKED_OVERLAYER_WRAP_ABI,
     wallet
   );
 

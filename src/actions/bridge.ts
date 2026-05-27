@@ -1,7 +1,6 @@
 import { ethers } from "ethers";
 import { CONFIG, CONTRACTS, LZ_ENDPOINTS } from "../config";
-import { OFT_ABI } from "../abi/overlayer";
-import { ERC20_ABI } from "../abi/erc20";
+import { OVERLAYER_WRAP_ABI } from "../abi/overlayer";
 import {
   getWallet,
   parseAmount,
@@ -50,10 +49,10 @@ export async function bridgeTokens(
     `Bridging ${amount} ${tokenName} from ${fromChain} to ${fromChain === "eth_sepolia" ? "Base Sepolia" : "ETH Sepolia"} via OFT (${txCount} tx)`
   );
 
-  // The T+/C+ token contract IS the OFT
+  // The T+/C+ token contract IS the OFT (OverlayerWrapCore extends OFT)
   const oftContract = new ethers.Contract(
     tokenContracts.TOKEN,
-    OFT_ABI,
+    OVERLAYER_WRAP_ABI,
     wallet
   );
 
