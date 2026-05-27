@@ -5,6 +5,11 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Auto-checksum any address to prevent INVALID_ARGUMENT errors
+export function toChecksumAddress(address: string): string {
+  return ethers.getAddress(address.toLowerCase());
+}
+
 export function getProvider(chain: "eth_sepolia" | "base_sepolia") {
   const rpc =
     chain === "eth_sepolia" ? CONFIG.ETH_SEPOLIA_RPC : CONFIG.BASE_SEPOLIA_RPC;

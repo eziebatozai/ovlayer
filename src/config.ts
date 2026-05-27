@@ -35,35 +35,35 @@ export const CONTRACTS = {
   ETH_SEPOLIA: {
     USDT: {
       // T+ token (OverlayerWrap USDT) — mint/bridge contract
-      TOKEN: "0xe20534a32F9162488a90026F268a74fBE28d272D",
+      TOKEN: "0xe20534a32f9162488a90026f268a74fbe28d272d",
       // sT+ (StakedOverlayerWrap USDT) — ERC4626 staking vault
-      STAKING: "0x079a4Bf1Cbd0E4ce15391340cB46efA6396aBc82",
+      STAKING: "0x079a4bf1cbd0e4ce15391340cb46efa6396abc82",
       // Underlying USDT on Ethereum Sepolia
-      UNDERLYING: "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0",
+      UNDERLYING: "0xaa8e23fb1079ea71e0a56f48a2aa51851d8433d0",
     },
     USDC: {
       // C+ token (OverlayerWrap USDC) — mint/bridge contract
-      TOKEN: "0xE815718D44694ec4637CB775C468d87f6e15B538",
+      TOKEN: "0xe815718d44694ec4637cb775c468d87f6e15b538",
       // sC+ (StakedOverlayerWrap USDC) — ERC4626 staking vault
-      STAKING: "0x753937137Eb92871A6F3517514d4f1Ee860e3FDF",
+      STAKING: "0x753937137eb92871a6f3517514d4f1ee860e3fdf",
       // Underlying USDC on Ethereum Sepolia
-      UNDERLYING: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
+      UNDERLYING: "0x94a9d9ac8a22534e3faca9f4e7f2e2cf85d5e4c8",
     },
   },
   BASE_SEPOLIA: {
     USDT: {
       // T+ token (OverlayerWrap USDT) on Base Sepolia
-      TOKEN: "0xdE287B4a0918102511b027d53688c169fb308762",
+      TOKEN: "0xde287b4a0918102511b027d53688c169fb308762",
       // sT+ staking on Base Sepolia
-      STAKING: "0x5BBc62c58C3b23566488fdFa78455ea00C31a76C",
+      STAKING: "0x5bbc62c58c3b23566488fdfa78455ea00c31a76c",
       // Underlying USDT on Base Sepolia (to be confirmed)
       UNDERLYING: "",
     },
     USDC: {
       // C+ token (OverlayerWrap USDC) on Base Sepolia
-      TOKEN: "0x92f36E427a9579fe1356f19c74eb5d64bEae8930",
+      TOKEN: "0x92f36e427a9579fe1356f19c74eb5d64beae8930",
       // sC+ staking on Base Sepolia
-      STAKING: "0xD3bE3A1EA873d96533510Edd93a62CC28AC6964B",
+      STAKING: "0xd3be3a1ea873d96533510edd93a62cc28ac6964b",
       // Underlying USDC on Base Sepolia (to be confirmed)
       UNDERLYING: "",
     },
