@@ -1,0 +1,24 @@
+{
+  "name": "ovlayer-testnet-bot",
+  "version": "1.0.0",
+  "description": "Overlayer Testnet Daily Task Bot - Mint, Stake, Bridge, Send, Receive",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "mint": "ts-node src/actions/mint.ts",
+    "stake": "ts-node src/actions/stake.ts",
+    "bridge": "ts-node src/actions/bridge.ts",
+    "send": "ts-node src/actions/send.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}
