@@ -7,8 +7,8 @@ export const CONFIG = {
   PRIVATE_KEY_2: process.env.PRIVATE_KEY_2 || "",
 
   // RPC
-  ETH_SEPOLIA_RPC: process.env.ETH_SEPOLIA_RPC || "https://rpc.sepolia.org",
-  BASE_SEPOLIA_RPC: process.env.BASE_SEPOLIA_RPC || "https://sepolia.base.org",
+  ETH_SEPOLIA_RPC: process.env.ETH_SEPOLIA_RPC || "https://ethereum-sepolia-rpc.publicnode.com",
+  BASE_SEPOLIA_RPC: process.env.BASE_SEPOLIA_RPC || "https://base-sepolia-rpc.publicnode.com",
 
   // Chain IDs
   ETH_SEPOLIA_CHAIN_ID: 11155111,
