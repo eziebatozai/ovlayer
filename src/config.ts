@@ -33,16 +33,20 @@ export const CONFIG = {
 export const CONTRACTS = {
   ETH_SEPOLIA: {
     USDT: {
-      // T+ token (overlaid USDT)
+      // T+ token (overlaid USDT) - this is the mint contract
       TOKEN: "0xe20534a32F9162488a90026F268a74fBE28d272D",
       // sT+ staking token
       STAKING: "0x079a4Bf1Cbd0E4ce15391340cB46efA6396aBc82",
+      // Underlying USDT asset on Sepolia
+      UNDERLYING: "0x185d2fB5CF9aa2774edE1fCc8Ca1e332122EdD6b",
     },
     USDC: {
-      // C+ token (overlaid USDC)
+      // C+ token (overlaid USDC) - this is the mint contract
       TOKEN: "0xE815718D44694ec4637CB775C468d87f6e15B538",
       // sC+ staking token
       STAKING: "0x753937137Eb92871A6F3517514d4f1Ee860e3FDF",
+      // Underlying USDC asset on Sepolia (Circle testnet USDC)
+      UNDERLYING: "0xaa8e23fb1079ea71e0a56f48a2aa51851d8433d0",
     },
   },
   BASE_SEPOLIA: {
@@ -51,12 +55,16 @@ export const CONTRACTS = {
       TOKEN: "0xdE287B4a0918102511b027d53688c169fb308762",
       // sT+ staking token
       STAKING: "0x5BBc62c58C3b23566488fdFa78455ea00C31a76C",
+      // Underlying USDT on Base Sepolia
+      UNDERLYING: "",
     },
     USDC: {
       // C+ token (overlaid USDC)
       TOKEN: "0x92f36E427a9579fe1356f19c74eb5d64bEae8930",
       // sC+ staking token
       STAKING: "0xD3bE3A1EA873d96533510Edd93a62CC28AC6964B",
+      // Underlying USDC on Base Sepolia
+      UNDERLYING: "",
     },
   },
 };

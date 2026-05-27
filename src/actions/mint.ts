@@ -12,8 +12,18 @@ import {
 } from "../utils/helpers";
 
 /**
- * Mint T+ tokens by depositing USDT on the T+ contract
- * The T+ contract acts as an ERC4626 vault - deposit underlying → get overlaid asset
+ * Mint T+ or C+ tokens on Overlayer
+ * 
+ * Based on actual TX: 0x602c00f3f3010342d411886ff53a907b82b903fd2b5455bac266a1987067a220
+ * Function: mint(tuple order_)
+ * MethodID: 0x2ef6f1ab
+ * 
+ * Order struct:
+ *   - depositor: address (who deposits the underlying)
+ *   - receiver: address (who receives the minted token)
+ *   - asset: address (underlying stablecoin address)
+ *   - assetAmount: uint256 (amount of underlying to deposit)
+ *   - mintAmount: uint256 (amount of overlaid token to mint)
  */
 export async function mintTokens(
   chain: "eth_sepolia" | "base_sepolia",
@@ -31,95 +41,77 @@ export async function mintTokens(
 
   log("MINT", `Starting mint of ${amount} ${tokenName} on ${chain} (${txCount} tx)`);
 
+  // Token contract (T+ or C+) - this has the mint function
   const vaultContract = new ethers.Contract(
     tokenContracts.TOKEN,
     VAULT_ABI,
     wallet
   );
 
+  // Underlying stablecoin contract
+  const underlyingContract = new ethers.Contract(
+    tokenContracts.UNDERLYING,
+    ERC20_ABI,
+    wallet
+  );
+
+  // Get decimals
+  const underlyingDecimals = await underlyingContract.decimals();
+  const tokenDecimals = await vaultContract.decimals();
+
   let successCount = 0;
   const amountPerTx = Math.ceil(amount / txCount);
 
   for (let i = 0; i < txCount; i++) {
     try {
-      const mintAmount = i === txCount - 1 ? amount - amountPerTx * i : amountPerTx;
+      const mintAmount = i === txCount - 1 
+        ? amount - amountPerTx * (txCount - 1) 
+        : amountPerTx;
       if (mintAmount <= 0) break;
 
-      // Get the underlying asset address
-      let underlyingAsset: string;
-      try {
-        underlyingAsset = await vaultContract.asset();
-      } catch {
-        // If no asset() function, the token itself accepts direct minting
-        // Try direct mint approach
-        log("MINT", `Attempting direct mint (no vault pattern)...`);
-        const decimals = await vaultContract.decimals();
-        const parsedAmount = parseAmount(mintAmount, decimals);
+      // Parse amounts based on decimals
+      // Underlying (USDC/USDT) typically 6 decimals, overlaid token (T+/C+) 18 decimals
+      const assetAmount = parseAmount(mintAmount, underlyingDecimals);
+      const mintTokenAmount = parseAmount(mintAmount, tokenDecimals);
+      
+      log("MINT", `Asset amount: ${assetAmount} (${underlyingDecimals} dec), Mint amount: ${mintTokenAmount} (${tokenDecimals} dec)`);
 
-        const tx = await vaultContract.mint(parsedAmount, address);
-        const receipt = await tx.wait();
-        log("MINT", `Minted ${mintAmount} ${tokenName} (tx ${i + 1}/${txCount})`, receipt.hash);
-        successCount++;
-        if (i < txCount - 1) await sleep(CONFIG.TX_DELAY);
-        continue;
-      }
-
-      // Approve underlying asset to vault
-      const underlyingContract = new ethers.Contract(
-        underlyingAsset,
-        ERC20_ABI,
-        wallet
-      );
-      const decimals = await underlyingContract.decimals();
-      const parsedAmount = parseAmount(mintAmount, decimals);
-
-      // Check balance
+      // Check underlying balance
       const balance = await underlyingContract.balanceOf(address);
-      if (balance < parsedAmount) {
+      if (balance < assetAmount) {
         log(
           "MINT",
-          `Insufficient underlying balance: ${formatAmount(balance, decimals)} < ${mintAmount}`
+          `Insufficient ${tokenType} balance: ${formatAmount(balance, underlyingDecimals)} < ${mintAmount}`
         );
-        // Try with available balance
-        if (balance > 0n) {
-          const currentAllowance = await underlyingContract.allowance(
-            address,
-            tokenContracts.TOKEN
-          );
-          if (currentAllowance < balance) {
-            const approveTx = await underlyingContract.approve(
-              tokenContracts.TOKEN,
-              ethers.MaxUint256
-            );
-            await approveTx.wait();
-            log("MINT", `Approved ${tokenName} vault`);
-          }
-
-          const tx = await vaultContract.deposit(balance, address);
-          const receipt = await tx.wait();
-          log("MINT", `Minted with available balance (tx ${i + 1}/${txCount})`, receipt.hash);
-          successCount++;
-        }
         break;
       }
 
-      // Approve
+      // Approve underlying to T+/C+ contract if needed
       const currentAllowance = await underlyingContract.allowance(
         address,
         tokenContracts.TOKEN
       );
-      if (currentAllowance < parsedAmount) {
+      if (currentAllowance < assetAmount) {
         const approveTx = await underlyingContract.approve(
           tokenContracts.TOKEN,
           ethers.MaxUint256
         );
         await approveTx.wait();
-        log("MINT", `Approved ${tokenName} vault for spending`);
+        log("MINT", `Approved ${tokenName} contract to spend ${tokenType}`);
         await sleep(2000);
       }
 
-      // Deposit
-      const tx = await vaultContract.deposit(parsedAmount, address);
+      // Build the order tuple
+      const order = {
+        depositor: address,
+        receiver: address,
+        asset: tokenContracts.UNDERLYING,
+        assetAmount: assetAmount,
+        mintAmount: mintTokenAmount,
+      };
+
+      // Call mint(order_)
+      const tx = await vaultContract.mint(order);
       const receipt = await tx.wait();
       log(
         "MINT",
@@ -131,17 +123,6 @@ export async function mintTokens(
       if (i < txCount - 1) await sleep(CONFIG.TX_DELAY);
     } catch (error: any) {
       logError("MINT", error);
-      // Try alternative: direct mint without deposit pattern
-      try {
-        const decimals = await vaultContract.decimals();
-        const parsedAmount = parseAmount(amountPerTx, decimals);
-        const tx = await vaultContract.mint(parsedAmount, address);
-        const receipt = await tx.wait();
-        log("MINT", `Direct mint ${tokenName} (tx ${i + 1}/${txCount})`, receipt.hash);
-        successCount++;
-      } catch (err2) {
-        logError("MINT", err2);
-      }
       if (i < txCount - 1) await sleep(CONFIG.TX_DELAY);
     }
   }
@@ -152,7 +133,7 @@ export async function mintTokens(
 
 // Run standalone
 if (require.main === module) {
-  mintTokens("eth_sepolia", "USDT", CONFIG.MIN_MINT_AMOUNT, 5)
+  mintTokens("eth_sepolia", "USDT", CONFIG.MIN_MINT_AMOUNT, 10)
     .then((count) => console.log(`Done. ${count} mints completed.`))
     .catch(console.error);
 }

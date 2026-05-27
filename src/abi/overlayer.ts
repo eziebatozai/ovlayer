@@ -1,5 +1,6 @@
-// Overlayer Vault / Mint contract ABI
-// Based on ERC4626-like vault pattern (deposit stablecoin → mint overlaid asset)
+// Overlayer Mint contract ABI
+// Custom mint function: mint(tuple order_) with MethodID 0x2ef6f1ab
+// Order struct: (address depositor, address receiver, address asset, uint256 assetAmount, uint256 mintAmount)
 export const VAULT_ABI = [
   // Read functions
   "function name() view returns (string)",
@@ -8,23 +9,10 @@ export const VAULT_ABI = [
   "function totalSupply() view returns (uint256)",
   "function balanceOf(address) view returns (uint256)",
   "function asset() view returns (address)",
-  "function totalAssets() view returns (uint256)",
-  "function convertToShares(uint256 assets) view returns (uint256)",
-  "function convertToAssets(uint256 shares) view returns (uint256)",
-  "function maxDeposit(address) view returns (uint256)",
-  "function maxMint(address) view returns (uint256)",
-  "function maxWithdraw(address) view returns (uint256)",
-  "function maxRedeem(address) view returns (uint256)",
-  "function previewDeposit(uint256 assets) view returns (uint256)",
-  "function previewMint(uint256 shares) view returns (uint256)",
-  "function previewWithdraw(uint256 assets) view returns (uint256)",
-  "function previewRedeem(uint256 shares) view returns (uint256)",
 
-  // Write functions
-  "function deposit(uint256 assets, address receiver) returns (uint256)",
-  "function mint(uint256 shares, address receiver) returns (uint256)",
-  "function withdraw(uint256 assets, address receiver, address owner) returns (uint256)",
-  "function redeem(uint256 shares, address receiver, address owner) returns (uint256)",
+  // Custom mint function used by Overlayer
+  // order_ = (depositor, receiver, asset, assetAmount, mintAmount)
+  "function mint((address depositor, address receiver, address asset, uint256 assetAmount, uint256 mintAmount) order_) returns (uint256)",
 
   // ERC20 functions
   "function transfer(address to, uint256 amount) returns (bool)",
