@@ -49,6 +49,10 @@ export const STAKING_ABI = [
 ];
 
 // OFT (Omnichain Fungible Token) ABI for LayerZero bridge
+// Based on actual TX: 0x80a2c0180221e98c2a7260e7c22479c657b544a40a0ce55abe49f69098a303c8
+// Function: send(tuple _sendParam, tuple _fee, address _refundAddress)
+// MethodID: 0xc7c7f5b3
+// The T+/C+ token contract itself IS the OFT (burns on source, mints on dest)
 export const OFT_ABI = [
   // ERC20 base
   "function name() view returns (string)",
@@ -62,9 +66,9 @@ export const OFT_ABI = [
   "function token() view returns (address)",
   "function sharedDecimals() view returns (uint8)",
 
-  // Quote fee for sending
-  "function quoteSend((uint32 dstEid, bytes32 to, uint256 amountLD, uint256 minAmountLD, bytes extraOptions, bytes composeMsg, bytes oftCmd), bool payInLzToken) view returns ((uint256 nativeFee, uint256 lzTokenFee))",
+  // Quote fee for sending cross-chain
+  "function quoteSend((uint32 dstEid, bytes32 to, uint256 amountLD, uint256 minAmountLD, bytes extraOptions, bytes composeMsg, bytes oftCmd) _sendParam, bool _payInLzToken) view returns ((uint256 nativeFee, uint256 lzTokenFee))",
 
-  // Send tokens cross-chain
-  "function send((uint32 dstEid, bytes32 to, uint256 amountLD, uint256 minAmountLD, bytes extraOptions, bytes composeMsg, bytes oftCmd), (uint256 nativeFee, uint256 lzTokenFee), address refundAddress) payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee)))",
+  // Send tokens cross-chain (burns on source chain, mints on destination)
+  "function send((uint32 dstEid, bytes32 to, uint256 amountLD, uint256 minAmountLD, bytes extraOptions, bytes composeMsg, bytes oftCmd) _sendParam, (uint256 nativeFee, uint256 lzTokenFee) _fee, address _refundAddress) payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee)))",
 ];
